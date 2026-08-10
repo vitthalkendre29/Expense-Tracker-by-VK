@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-mist dark:border-mistdark;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  :focus-visible {
+    outline: 2px solid #1B6B5B;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Amounts are always set in tabular mono figures — the app's signature
+     typographic detail, evoking a ledger / receipt printout. */
+  .amount {
+    @apply font-mono tabular-nums tracking-tight;
+  }
+
+  .card {
+    @apply bg-white dark:bg-[#152420] rounded-2xl shadow-card border border-mist/70 dark:border-mistdark;
+  }
+
+  .stamp-chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border;
+  }
+
+  .btn-primary {
+    @apply bg-teal text-paper font-display font-semibold rounded-xl px-4 py-2.5 shadow-sm hover:bg-teal-600 active:scale-[0.98] transition;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent border border-teal/30 text-teal font-medium rounded-xl px-4 py-2.5 hover:bg-teal-50 dark:hover:bg-teal-700/20 transition;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-mist bg-white dark:bg-[#0D1613] dark:border-mistdark px-3.5 py-2.5 text-sm focus:border-teal focus:ring-1 focus:ring-teal outline-none transition;
+  }
+
+  /* Heatmap intensity scale for the calendar view */
+  .heat-0 { @apply bg-mist/40 dark:bg-mistdark; }
+  .heat-1 { @apply bg-teal-100 dark:bg-teal-700/30; }
+  .heat-2 { @apply bg-teal-400/60 dark:bg-teal-500/50; }
+  .heat-3 { @apply bg-teal-500 text-white dark:bg-teal-500; }
+  .heat-4 { @apply bg-teal-700 text-white; }
+}
