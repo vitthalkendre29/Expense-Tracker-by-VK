@@ -115,9 +115,9 @@ export default function CalendarHeatmap({ initialMonth, initialByDay }) {
                 <li key={tx._id} className="flex items-center justify-between text-sm">
                   <span>
                     {tx.categoryId?.icon} {tx.categoryId?.name}
-                    {tx.description ? ` Â· ${tx.description}` : ''}
+                    {tx.description ? `  ₹ ${tx.description}` : ''}
                   </span>
-                  <span className="amount font-medium">â‚¹{tx.amount.toLocaleString('en-IN')}</span>
+                  <span className="amount font-medium"> ₹{tx.amount.toLocaleString('en-IN')}</span>
                 </li>
               ))}
             </ul>
