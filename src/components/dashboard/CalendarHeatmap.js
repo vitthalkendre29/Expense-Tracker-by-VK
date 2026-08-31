@@ -96,7 +96,7 @@ export default function CalendarHeatmap({ initialMonth, initialByDay }) {
               }`}
             >
               <span className="font-medium">{d}</span>
-              {amount > 0 && <span className="text-[9px] amount">â‚¹{amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : amount}</span>}
+              {amount > 0 && <span className="text-[9px] amount"> ₹{amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : amount}</span>}
             </button>
           );
         })}
