@@ -3,28 +3,13 @@ import mongoose from 'mongoose';
 import { connectDB } from '@/lib/db';
 import Expense from '@/models/Expense';
 import { getAuthUserId } from '@/lib/session';
- 
+
 // GET /api/expenses/analytics?range=month&date=2026-08-10
-// GET /api/expenses/analytics?range=calendar&year=2026&month=9   (month is 1-indexed)
 // range: day | week | month | quarter | year | calendar (month heatmap)
-//
-// year/month are accepted as plain numbers (not an ISO date string) specifically
-// to avoid timezone conversion bugs: a client-local "Sept 1 00:00" can serialize
-// to "Aug 31" in UTC, which â€” if read back with getFullYear()/getMonth() on a
-// server running in UTC â€” silently resolves to the wrong month.
-function getRange(range, dateStr, yearParam, monthParam) {
-  if ((range === 'calendar' || range === 'month') && yearParam && monthParam) {
-    const year = Number(yearParam);
-    const monthIndex = Number(monthParam) - 1; // convert 1-indexed input to JS's 0-indexed month
-    return {
-      start: new Date(year, monthIndex, 1),
-      end: new Date(year, monthIndex + 1, 0, 23, 59, 59, 999),
-    };
-  }
- 
+function getRange(range, dateStr) {
   const d = dateStr ? new Date(dateStr) : new Date();
   let start, end;
- 
+
   if (range === 'day') {
     start = new Date(d.setHours(0, 0, 0, 0));
     end = new Date(d.setHours(23, 59, 59, 999));
@@ -52,23 +37,21 @@ function getRange(range, dateStr, yearParam, monthParam) {
   }
   return { start, end };
 }
- 
+
 export async function GET(req) {
   const userId = await getAuthUserId();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
- 
+
   try {
     await connectDB();
     const { searchParams } = new URL(req.url);
     const range = searchParams.get('range') || 'month';
     const dateParam = searchParams.get('date');
-    const yearParam = searchParams.get('year');
-    const monthParam = searchParams.get('month');
-    const { start, end } = getRange(range, dateParam, yearParam, monthParam);
- 
+    const { start, end } = getRange(range, dateParam);
+
     const uid = new mongoose.Types.ObjectId(userId);
     const match = { userId: uid, date: { $gte: start, $lte: end } };
- 
+
     const [totals, byCategory, byPaymentMethod, byDay] = await Promise.all([
       Expense.aggregate([
         { $match: match },
@@ -133,7 +116,7 @@ export async function GET(req) {
         { $sort: { _id: 1 } },
       ]),
     ]);
- 
+
     // Comparison with the previous equivalent period
     const spanMs = end.getTime() - start.getTime();
     const prevStart = new Date(start.getTime() - spanMs - 1);
@@ -142,14 +125,14 @@ export async function GET(req) {
       { $match: { userId: uid, date: { $gte: prevStart, $lte: prevEnd } } },
       { $group: { _id: null, total: { $sum: '$amount' } } },
     ]);
- 
+
     const currentTotal = totals[0]?.total || 0;
     const previousTotal = prevTotals?.total || 0;
     const percentChange =
       previousTotal > 0
         ? Number((((currentTotal - previousTotal) / previousTotal) * 100).toFixed(1))
         : null;
- 
+
     return NextResponse.json({
       range,
       start,
