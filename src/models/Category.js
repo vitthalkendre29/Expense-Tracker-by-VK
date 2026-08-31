@@ -26,6 +26,7 @@ export const DEFAULT_CATEGORIES = [
   { name: 'Travel', icon: '✈️', color: '#3F9BD9' },
   { name: 'Work / Professional', icon: '💼', color: '#4A5B7A' },
   { name: 'Miscellaneous', icon: '📦', color: '#8A8A8A' },
+  { name: 'Gifts', icon: '🎁', color: '#6cff00' }
 ];
 
 export default mongoose.models.Category || mongoose.model('Category', CategorySchema);
