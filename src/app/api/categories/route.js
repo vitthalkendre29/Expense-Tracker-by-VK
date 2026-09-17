@@ -1,21 +1,23 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import { connectDB } from '@/lib/db';
-import Category from '@/models/Category';
+import Category, { DEFAULT_CATEGORIES } from '@/models/Category';
 import { getAuthUserId } from '@/lib/session';
-
-const categorySchema = z.object({
-  name: z.string().min(1, 'Name is required').max(50),
-  icon: z.string().min(1).max(10).default('📦'),
-  color: z.string().min(1).default('#1B6B5B'),
-});
 
 export async function GET() {
   const userId = await getAuthUserId();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   await connectDB();
-  const categories = await Category.find({ userId }).sort({ isDefault: -1, name: 1 }).lean();
+  let categories = await Category.find({ userId }).sort({ name: 1 });
+
+  // First-time setup: seed default categories for this user
+  if (categories.length === 0) {
+    const seeded = await Category.insertMany(
+      DEFAULT_CATEGORIES.map((c) => ({ ...c, userId, isDefault: true }))
+    );
+    categories = seeded.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   return NextResponse.json({ categories });
 }
 
@@ -24,21 +26,25 @@ export async function POST(req) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const body = await req.json();
-    const parsed = categorySchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    const { name, icon, color } = await req.json();
+    if (!name || !name.trim()) {
+      return NextResponse.json({ error: 'Category name is required.' }, { status: 400 });
     }
 
     await connectDB();
-    const existing = await Category.findOne({ userId, name: parsed.data.name });
-    if (existing) {
-      return NextResponse.json({ error: 'A category with this name already exists.' }, { status: 409 });
-    }
+    const category = await Category.create({
+      userId,
+      name: name.trim(),
+      icon: icon || '📦',
+      color: color || '#1B6B5B',
+      isDefault: false,
+    });
 
-    const category = await Category.create({ ...parsed.data, userId });
     return NextResponse.json({ category }, { status: 201 });
   } catch (err) {
+    if (err.code === 11000) {
+      return NextResponse.json({ error: 'A category with this name already exists.' }, { status: 409 });
+    }
     console.error('Create category error:', err);
     return NextResponse.json({ error: 'Unable to create category.' }, { status: 500 });
   }
