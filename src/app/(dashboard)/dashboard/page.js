@@ -3,7 +3,8 @@ import { authOptions } from '@/lib/auth';
 import { getPeriodSummary, getRecentExpenses } from '@/lib/analytics';
 import SpendingTrendChart from '@/components/dashboard/SpendingTrendChart';
 import CategoryDonut from '@/components/dashboard/CategoryDonut';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown,Receipt } from 'lucide-react';
+import Link from 'next/link';
 
 function fmt(n) {
   return `₹${Number(n || 0).toLocaleString('en-IN')}`;
@@ -88,6 +89,10 @@ export default async function DashboardPage() {
 
       <div className="card p-5">
         <h2 className="font-display font-semibold mb-3">Recent transactions</h2>
+        <Link href="/expenses" className="btn-primary shrink-0 inline-flex items-center gap-2">
+          View All
+          <Receipt size={16} />
+        </Link>
         {recent.length === 0 ? (
           <div className="text-center py-10">
             <p className="font-medium mb-1">No expenses yet</p>
