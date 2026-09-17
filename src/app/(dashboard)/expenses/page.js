@@ -25,6 +25,16 @@ export default function ExpensesPage() {
       });
   }, [page, search]);
 
+  const isToday = (date) => {
+    const txDate = new Date(date);
+    const today = new Date();
+    return (
+      txDate.getDate() === today.getDate() &&
+      txDate.getMonth() === today.getMonth() &&
+      txDate.getFullYear() === today.getFullYear()
+    );
+  };
+
   async function handleDelete(id) {
     if (!confirm('Delete this expense? This cannot be undone.')) return;
     const res = await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
@@ -87,13 +97,15 @@ export default function ExpensesPage() {
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <p className="amount font-semibold">{fmt(tx.amount)}</p>
-                <button
-                  onClick={() => handleDelete(tx._id)}
-                  className="text-ink/30 hover:text-coral transition opacity-0 group-hover:opacity-100"
-                  aria-label="Delete expense"
-                >
+                {isToday(tx.date) && (
+                  <button
+                    onClick={() => handleDelete(tx._id)}
+                    className="text-ink/30 hover:text-coral transition opacity-0 group-hover:opacity-100"
+                    aria-label="Delete expense"
+                  >
                   <Trash2 size={16} />
                 </button>
+                )}           
               </div>
             </div>
           ))
