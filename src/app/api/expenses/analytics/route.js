@@ -4,37 +4,53 @@ import { connectDB } from '@/lib/db';
 import Expense from '@/models/Expense';
 import { getAuthUserId } from '@/lib/session';
 
-// GET /api/expenses/analytics?range=month&date=2026-08-10
+// GET /api/expenses/analytics?range=month&offset=-1
 // range: day | week | month | quarter | year | calendar (month heatmap)
-function getRange(range, dateStr) {
-  const d = dateStr ? new Date(dateStr) : new Date();
+// offset: 0 = current period, -1 = previous period, -2 = two periods back, etc.
+//         Positive offsets are rejected server-side (no future periods).
+function getRange(range, offset = 0) {
+  const now = new Date();
   let start, end;
 
   if (range === 'day') {
+    const d = new Date(now);
+    d.setDate(d.getDate() + offset);
     start = new Date(d.setHours(0, 0, 0, 0));
-    end = new Date(d.setHours(23, 59, 59, 999));
+    end = new Date(new Date(d).setHours(23, 59, 59, 999));
   } else if (range === 'week') {
-    const day = d.getDay();
-    start = new Date(d);
-    start.setDate(d.getDate() - day);
+    const day = now.getDay();
+    start = new Date(now);
+    start.setDate(now.getDate() - day + offset * 7);
     start.setHours(0, 0, 0, 0);
     end = new Date(start);
     end.setDate(start.getDate() + 6);
     end.setHours(23, 59, 59, 999);
   } else if (range === 'month' || range === 'calendar') {
-    start = new Date(d.getFullYear(), d.getMonth(), 1);
-    end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+    start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0, 23, 59, 59, 999);
   } else if (range === 'quarter') {
-    const q = Math.floor(d.getMonth() / 3);
-    start = new Date(d.getFullYear(), q * 3, 1);
-    end = new Date(d.getFullYear(), q * 3 + 3, 0, 23, 59, 59, 999);
+    const currentQuarterIndex = Math.floor(now.getMonth() / 3); // 0-3
+    const totalQuarters = currentQuarterIndex + offset;
+    const year = now.getFullYear() + Math.floor(totalQuarters / 4);
+    const q = ((totalQuarters % 4) + 4) % 4;
+    start = new Date(year, q * 3, 1);
+    end = new Date(year, q * 3 + 3, 0, 23, 59, 59, 999);
   } else if (range === 'year') {
-    start = new Date(d.getFullYear(), 0, 1);
-    end = new Date(d.getFullYear(), 11, 31, 23, 59, 59, 999);
+    const year = now.getFullYear() + offset;
+    start = new Date(year, 0, 1);
+    end = new Date(year, 11, 31, 23, 59, 59, 999);
   } else {
-    start = new Date(d.getFullYear(), d.getMonth(), 1);
-    end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+    start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0, 23, 59, 59, 999);
   }
+
+  // Never let the window extend past "right now" — clamps the current
+  // period's end to the live moment instead of the full period end,
+  // and is a hard backstop if a future offset ever slips through.
+  if (end.getTime() > now.getTime()) {
+    end = now;
+  }
+
   return { start, end };
 }
 
@@ -46,8 +62,24 @@ export async function GET(req) {
     await connectDB();
     const { searchParams } = new URL(req.url);
     const range = searchParams.get('range') || 'month';
-    const dateParam = searchParams.get('date');
-    const { start, end } = getRange(range, dateParam);
+
+    let offset = parseInt(searchParams.get('offset') ?? '0', 10);
+    if (Number.isNaN(offset)) offset = 0;
+    if (offset > 0) {
+      return NextResponse.json(
+        { error: 'Cannot request analytics for a future period.' },
+        { status: 400 }
+      );
+    }
+
+    const { start, end } = getRange(range, offset);
+
+    if (start.getTime() > end.getTime()) {
+      return NextResponse.json(
+        { error: 'Requested period has no valid date range.' },
+        { status: 400 }
+      );
+    }
 
     const uid = new mongoose.Types.ObjectId(userId);
     const match = { userId: uid, date: { $gte: start, $lte: end } };
@@ -135,6 +167,7 @@ export async function GET(req) {
 
     return NextResponse.json({
       range,
+      offset,
       start,
       end,
       summary: {
