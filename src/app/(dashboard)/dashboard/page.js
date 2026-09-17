@@ -88,11 +88,13 @@ export default async function DashboardPage() {
       </div>
 
       <div className="card p-5">
-        <h2 className="font-display font-semibold mb-3">Recent transactions</h2>
-        <Link href="/expenses" className="btn-primary shrink-0 inline-flex items-center gap-2">
-          View All
-          <Receipt size={16} />
-        </Link>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display font-semibold mb-3">Recent transactions</h2>
+          <Link href="/expenses" className="btn-primary shrink-0 inline-flex items-center gap-2">
+            <Receipt size={16} />View All
+          </Link>
+        </div>
+        
         {recent.length === 0 ? (
           <div className="text-center py-10">
             <p className="font-medium mb-1">No expenses yet</p>
