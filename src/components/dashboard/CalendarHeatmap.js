@@ -33,16 +33,21 @@ export default function CalendarHeatmap({ initialMonth, initialByDay }) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const startWeekday = firstDay.getDay();
 
-  async function changeMonth(delta) {
-    const next = new Date(year, month + delta, 1);
-    setCursor(next);
-    setLoading(true);
-    const res = await fetch(`/api/expenses/analytics?range=calendar&date=${next.toISOString()}`);
-    const data = await res.json();
-    setByDay(data.byDay || []);
-    setLoading(false);
-    setSelectedDay(null);
-  }
+async function changeMonth(delta) {
+  const next = new Date(year, month + delta, 1);
+  const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const offset =
+    (next.getFullYear() - currentMonthStart.getFullYear()) * 12 +
+    (next.getMonth() - currentMonthStart.getMonth());
+
+  setCursor(next);
+  setLoading(true);
+  const res = await fetch(`/api/expenses/analytics?range=calendar&offset=${offset}`);
+  const data = await res.json();
+  setByDay(data.byDay || []);
+  setLoading(false);
+  setSelectedDay(null);
+}
 
   async function openDay(dateStr) {
     setSelectedDay(dateStr);
@@ -81,6 +86,7 @@ export default function CalendarHeatmap({ initialMonth, initialByDay }) {
           const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
           const amount = dayMap.get(dateStr) || 0;
           const level = heatLevel(amount, maxAmount);
+          if (amount > 0) console.log({ dateStr, amount, maxAmount, level });
           return (
             <button
               key={i}
