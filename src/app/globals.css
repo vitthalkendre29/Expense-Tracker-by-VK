@@ -43,9 +43,9 @@
   }
 
   /* Heatmap intensity scale for the calendar view */
-  .heat-0 { @apply bg-mist/40 dark:bg-mistdark; }
-  .heat-1 { @apply bg-teal-100 dark:bg-teal-700/30; }
-  .heat-2 { @apply bg-teal-400/60 dark:bg-teal-500/50; }
-  .heat-3 { @apply bg-teal-500 text-white dark:bg-teal-500; }
-  .heat-4 { @apply bg-teal-700 text-white; }
+  .heata { @apply bg-mist/40 dark:bg-mistdark; }
+  .heatb { @apply bg-teal-100 dark:bg-teal-700/30; }
+  .heatc { @apply bg-teal-400/60 dark:bg-teal-500/50; }
+  .heatd { @apply bg-teal-500 text-white dark:bg-teal-500; }
+  .heate { @apply bg-teal-700 text-white; }
 }
