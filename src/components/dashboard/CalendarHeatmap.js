@@ -33,60 +33,20 @@ export default function CalendarHeatmap({ initialMonth, initialByDay }) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const startWeekday = firstDay.getDay();
 
-  async function changeMonth(delta) {
+async function changeMonth(delta) {
   const next = new Date(year, month + delta, 1);
-  const nextKey = getMonthKey(next);
-
-  // Already loaded → NO API REQUEST
-  if (monthCache.current.has(nextKey)) {
-    setCursor(next);
-    setByDay(monthCache.current.get(nextKey));
-    setSelectedDay(null);
-    return;
-  }
-
-  // Month not loaded → fetch 6 months backward
-  const currentMonthStart = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth(),
-    1
-  );
-
-  const nextOffset =
+  const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const offset =
     (next.getFullYear() - currentMonthStart.getFullYear()) * 12 +
     (next.getMonth() - currentMonthStart.getMonth());
 
-  // Start 5 months before the requested month
-  const startOffset = nextOffset - 5;
-
+  setCursor(next);
   setLoading(true);
-
-  try {
-    const res = await fetch(
-      `/api/expenses/analytics?range=calendar&offset=${startOffset}&months=6`
-    );
-
-    if (!res.ok) {
-      throw new Error('Failed to fetch calendar data');
-    }
-
-    const data = await res.json();
-
-    // Cache every returned month
-    Object.entries(data.months || {}).forEach(
-      ([monthKey, monthData]) => {
-        monthCache.current.set(monthKey, monthData);
-      }
-    );
-
-    setCursor(next);
-    setByDay(monthCache.current.get(nextKey) || []);
-    setSelectedDay(null);
-  } catch (error) {
-    console.error('Calendar fetch error:', error);
-  } finally {
-    setLoading(false);
-  }
+  const res = await fetch(`/api/expenses/analytics?range=calendar&offset=${offset}`);
+  const data = await res.json();
+  setByDay(data.byDay || []);
+  setLoading(false);
+  setSelectedDay(null);
 }
 
   async function openDay(dateStr) {
