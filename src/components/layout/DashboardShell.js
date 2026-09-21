@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import Sidebar from './Sidebar';
@@ -10,6 +10,17 @@ import AddExpenseModal from '@/components/expenses/AddExpenseModal';
 export default function DashboardShell({ children }) {
   const [modalOpen, setModalOpen] = useState(false);
   const router = useRouter();
+
+  useEffect(()=>{
+   if(modalOpen){
+     document.body.style.overflow='hidden';
+   } else{
+     document.body.style.overflow='';
+   }
+   return ()=>{
+     document.body.style.overflow='';
+   };
+  },[modalOpen]);
 
   return (
     <div className="flex min-h-screen">
