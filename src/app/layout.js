@@ -1,9 +1,10 @@
-import './globals.css';
+import './tailwind.css';
 import Providers from './providers';
 
 export const metadata = {
   title: 'Ledger — Personal Expense Tracker',
   description: 'Record an expense in seconds, understand your spending in minutes.',
+  icons: { icon: '/vklogo.png' },
 };
 
 export const viewport = {
